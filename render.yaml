@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: dockerapi-student-management
+    runtime: docker
+    plan: free
+    healthCheckPath: /health

@@ -1,0 +1,51 @@
+name: Docker image build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run automated API route tests
+        run: |
+          pytest automationTesting.py -v
+
+  build-and-push:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        run: |
+          echo "${{ secrets.DOCKERTOKEN }}" | docker login -u "${{ secrets.DOCKERUSERNAME }}" --password-stdin
+
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ secrets.DOCKERUSERNAME }}/fastapi-app:v0.1 -t ${{ secrets.DOCKERUSERNAME }}/fastapi-app:latest .
+
+      - name: Push Docker image
+        run: |
+          docker push ${{ secrets.DOCKERUSERNAME }}/fastapi-app:v0.1
+          docker push ${{ secrets.DOCKERUSERNAME }}/fastapi-app:latest
